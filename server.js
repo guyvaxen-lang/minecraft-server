@@ -1,6 +1,6 @@
 const express = require('express');
 const path = require('path');
-const sqlite3 = require('sqlite3').verbose();
+const Database = require('better-sqlite3');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -9,18 +9,19 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 const dbFile = path.join(__dirname, 'users.db');
-const db = new sqlite3.Database(dbFile, (err) => {
-    if (err) {
-        console.error('Error opening database', err.message);
-    } else {
-        console.log('Connected to SQLite database.');
-        db.run(`CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE,
-            password TEXT
-        )`);
-    }
-});
+
+// חיבור למסד הנתונים בצורה סינכרונית ובטוחה ללינוקס
+const db = new Database(dbFile);
+console.log('Connected to SQLite database.');
+
+// יצירת טבלת המשתמשים
+db.prepare(`
+    CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE,
+        password TEXT
+    )
+`).run();
 
 app.post('/api/register', (req, res) => {
     const { username, password } = req.body;
@@ -28,16 +29,17 @@ app.post('/api/register', (req, res) => {
         return res.json({ success: false, message: 'Имя пользователя и пароль обязательны' });
     }
 
-    const query = `INSERT INTO users (username, password) VALUES (?, ?)`;
-    db.run(query, [username, password], function(err) {
-        if (err) {
-            if (err.message.includes('UNIQUE constraint failed')) {
-                return res.json({ success: false, message: 'Пользователь уже существует' });
-            }
-            return res.json({ success: false, message: 'Ошибка сервера' });
-        }
+    try {
+        const stmt = db.prepare(`INSERT INTO users (username, password) VALUES (?, ?)`);
+        stmt.run(username, password);
         res.json({ success: { success: true, message: 'Регистрация успешна!' } });
-    });
+    } catch (err) {
+        if (err.message.includes('UNIQUE constraint failed')) {
+            return res.json({ success: false, message: 'Пользователь уже существует' });
+        }
+        console.error('Registration error:', err.message);
+        return res.json({ success: false, message: 'Ошибка сервера' });
+    }
 });
 
 app.post('/api/login', (req, res) => {
@@ -46,22 +48,23 @@ app.post('/api/login', (req, res) => {
         return res.json({ success: false, message: 'Заполните все поля' });
     }
 
-    const query = `SELECT * FROM users WHERE username = ? AND password = ?`;
-    db.get(query, [username, password], (err, row) => {
-        if (err) {
-            return res.json({ success: false, message: 'Ошибка сервера' });
-        }
+    try {
+        const stmt = db.prepare(`SELECT * FROM users WHERE username = ? AND password = ?`);
+        const row = stmt.get(username, password);
+
         if (row) {
             res.json({ success: true, message: 'Успешный вход!', username: row.username });
         } else {
             res.json({ success: false, message: 'Неверное имя пользователя или пароль' });
         }
-    });
+    } catch (err) {
+        console.error('Login error:', err.message);
+        return res.json({ success: false, message: 'Ошибка сервера' });
+    }
 });
 
 // Protect index.html route explicitly on server or fallback
 app.get('/index.html', (req, res) => {
-    // We can serve index.html, but protection is handled by client sessionStorage or token check
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
