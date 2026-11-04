@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ru" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход / Регистрация - Minecraft</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Courier New', Courier, monospace; }
+        body, html { width: 100%; height: 100%; overflow: hidden; background-color: #0b0704; }
+        .bg-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: url('https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.19/assets/minecraft/textures/block/dirt.png'); background-repeat: repeat; background-size: 64px 64px; image-rendering: pixelated; z-index: 1; }
+        .bg-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(5, 3, 2, 0.82); z-index: 2; }
+        .login-wrapper { position: relative; z-index: 4; width: 100%; height: 100%; display: flex; justify-content: flex-end; align-items: center; padding-right: 80px; }
+        .login-box { background-color: transparent; border: none; padding: 15px; width: 270px; text-align: left; }
+        h2 { color: #ffffff; margin-bottom: 15px; font-size: 22px; letter-spacing: 1px; text-shadow: 2px 2px #000000; }
+        .input-group { margin-bottom: 15px; text-align: left; }
+        label { display: block; color: #cccccc; margin-bottom: 5px; font-size: 13px; text-shadow: 1px 1px #000000; }
+        input { width: 100%; padding: 9px; background-color: rgba(17, 17, 17, 0.85); border: 2px solid #555555; color: #ffffff; font-size: 14px; outline: none; }
+        input:focus { border-color: #3b82f6; }
+        button { width: 100%; padding: 10px 0; background: none; border: none !important; outline: none !important; color: #ffffff; font-size: 17px; font-weight: bold; cursor: pointer; margin-top: 5px; text-shadow: 2px 2px 4px #000000; }
+        button:hover { color: #dddddd; opacity: 0.8; }
+        .msg { font-size: 13px; margin-top: 10px; text-shadow: 1px 1px #000; display: none; }
+        .success-msg { color: #4ade80; }
+        .error-msg { color: #f87171; }
+        .toggle-link { display: block; margin-top: 15px; color: #aaaaaa; font-size: 12px; text-decoration: underline; cursor: pointer; text-shadow: 1px 1px #000; }
+        .toggle-link:hover { color: #ffffff; }
+        .tiny-launcher-link { display: block; margin-top: 12px; color: #888888; font-size: 10px; text-decoration: none; text-shadow: 1px 1px #000000; }
+        .tiny-launcher-link:hover { color: #ffffff; text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="bg-container"></div>
+    <div class="bg-overlay"></div>
+    <div class="login-wrapper">
+        <div class="login-box">
+            <h2 id="formTitle">Вход</h2>
+            <form id="authForm">
+                <div class="input-group">
+                    <label for="username">Имя пользователя</label>
+                    <input type="text" id="username" required autocomplete="off">
+                </div>
+                <div class="input-group">
+                    <label for="password">Пароль</label>
+                    <input type="password" id="password" required>
+                </div>
+                <button type="submit" id="submitBtn">Войти</button>
+                <div id="messageBox" class="msg"></div>
+            </form>
+            <span class="toggle-link" id="toggleLink" onclick="toggleMode()">Регистрация</span>
+            <a href="launcher.html" class="tiny-launcher-link">хотите майнкрафт лаунчер? нажмите сюда</a>
+        </div>
+    </div>
+    <script>
+        let isRegister = false;
+        function toggleMode() {
+            isRegister = !isRegister;
+            const formTitle = document.getElementById('formTitle');
+            const submitBtn = document.getElementById('submitBtn');
+            const toggleLink = document.getElementById('toggleLink');
+            const messageBox = document.getElementById('messageBox');
+            messageBox.style.display = 'none';
+            if (isRegister) {
+                formTitle.innerText = 'Регистрация';
+                submitBtn.innerText = 'Зарегистрироваться';
+                toggleLink.innerText = 'Уже есть аккаунт? Войти';
+            } else {
+                formTitle.innerText = 'Вход';
+                submitBtn.innerText = 'Войти';
+                toggleLink.innerText = 'Регистрация';
+            }
+        }
+
+        document.getElementById('authForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const messageBox = document.getElementById('messageBox');
+
+            const endpoint = isRegister ? '/api/register' : '/api/login';
+
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                const data = await response.json();
+
+                messageBox.style.display = 'block';
+                if (data.success) {
+                    messageBox.className = 'msg success-msg';
+                    messageBox.innerText = isRegister ? 'Регистрация успешна! Войдите.' : 'Успешный вход!';
+                    if (!isRegister) {
+                        // Save authentication state to sessionStorage so user cannot access without login
+                        sessionStorage.setItem('isAuthenticated', 'true');
+                        sessionStorage.setItem('username', username);
+                        setTimeout(() => { window.location.href = '/index.html'; }, 1000);
+                    } else {
+                        setTimeout(() => { toggleMode(); messageBox.style.display = 'none'; }, 1500);
+                    }
+                } else {
+                    messageBox.className = 'msg error-msg';
+                    messageBox.innerText = data.message || 'Ошибка аутентификации';
+                }
+            } catch (err) {
+                messageBox.style.display = 'block';
+                messageBox.className = 'msg error-msg';
+                messageBox.innerText = 'Ошибка соединения с сервером';
+            }
+        });
+    </script>
+</body>
+</html>

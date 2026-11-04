@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ru" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Лаунчер - Minecraft</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Courier New', Courier, monospace; }
+        body, html { width: 100%; height: 100%; overflow: hidden; background-color: #0b0704; color: #fff; }
+        .bg-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: url('https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.19/assets/minecraft/textures/block/dirt.png'); background-repeat: repeat; background-size: 64px 64px; image-rendering: pixelated; z-index: 1; }
+        .bg-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(5, 3, 2, 0.85); z-index: 2; }
+        
+        /* Top Navigation Bar */
+        .navbar { position: absolute; top: 0; left: 0; width: 100%; display: flex; justify-content: flex-start; align-items: center; padding: 20px 40px; gap: 25px; z-index: 4; background: rgba(0, 0, 0, 0.4); }
+        .navbar a { color: #aaaaaa; text-decoration: none; font-size: 16px; font-weight: bold; text-shadow: 2px 2px #000; transition: color 0.2s; }
+        .navbar a:hover { color: #ffffff; text-decoration: underline; }
+        .navbar a.active { color: #4ade80; }
+
+        .content-wrapper { position: relative; z-index: 3; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+        .download-btn { background: none; border: none; outline: none; box-shadow: none; color: #4ade80; font-size: 18px; font-weight: bold; cursor: pointer; text-decoration: none; text-shadow: 2px 2px 4px #000000; transition: color 0.2s ease; }
+        .download-btn:hover { color: #ffffff; text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <script>
+        if (sessionStorage.getItem('isAuthenticated') !== 'true') {
+            window.location.href = '/login.html';
+        }
+    </script>
+
+    <div class="bg-container"></div>
+    <div class="bg-overlay"></div>
+    
+    <!-- Top Navigation Menu -->
+    <div class="navbar">
+        <a href="index.html">Home</a>
+        <a href="launcher.html" class="active">Лаунчер</a>
+        <a href="login.html" onclick="sessionStorage.clear()">Выйти из аккаунта</a>
+    </div>
+
+    <div class="content-wrapper">
+        <a href="#" class="download-btn" id="downloadLauncherBtn">скачать майнкрафт лаунчер</a>
+    </div>
+
+    <script>
+        document.getElementById('downloadLauncherBtn').getElementById = ... # standard script
+        document.getElementById('downloadLauncherBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            const blob = new Blob(["Minecraft Launcher Setup Placeholder"], { type: "text/plain" });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = "MinecraftLauncher_Setup.exe";
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        });
+    </script>
+</body>
+</html>
